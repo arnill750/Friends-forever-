@@ -1,0 +1,425 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Friends Forever</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+<style>
+  body{font-family:'Segoe UI',system-ui,sans-serif;background:#0f172a}
+  .hs::-webkit-scrollbar{display:none}.hs{-ms-overflow-style:none;scrollbar-width:none}
+</style>
+</head>
+<body class="flex justify-center items-center min-h-screen p-0 sm:p-4">
+<div class="w-full sm:max-w-md bg-white h-screen sm:h-[860px] sm:rounded-3xl shadow-2xl relative overflow-hidden flex flex-col border border-slate-200">
+  <div id="app" class="flex flex-col h-full"></div>
+  <div id="modal" class="absolute inset-0 bg-black/60 backdrop-blur-sm z-50 hidden items-end justify-center">
+    <div class="bg-white w-full rounded-t-3xl p-5 relative max-h-[90%] overflow-y-auto hs" id="modalBody"></div>
+  </div>
+</div>
+
+<script>
+/* ================= i18n ================= */
+const T = {
+bn:{welcome:"স্বাগতম,",admin:"এডমিন",cashier:"ক্যাশিয়ার",member:"সদস্য",total_pool:"সমিতির মোট তহবিল (জমা + লাভ)",cash_hand:"ক্যাশিয়ারের হাতে",in_bank:"ব্যাংকে জমা",
+ a_deposit:"জমা",a_bank:"ব্যাংকে জমা",a_loan:"ঋণ",a_invest:"বিনিয়োগ",a_remind:"রিমাইন্ডার",
+ home:"হোম",history:"লেনদেন",approvals:"অনুমোদন",bank:"ব্যাংক",
+ members:"সদস্যদের তালিকা",no_members:"কোনো সদস্য নেই। উপরের বাটন থেকে সদস্য যোগ করুন।",add_member:"সদস্য যোগ",
+ saved:"মোট জমা:",loan_out:"বকেয়া ঋণ:",left:"নিষ্ক্রিয়",
+ invest_title:"বিনিয়োগ ও লাভ",no_invest:"কোনো বিনিয়োগ নেই",capital:"মূলধন:",profit:"লাভ:",add_profit:"লাভ যোগ",
+ loans_title:"ঋণ তালিকা",no_loans:"কোনো ঋণ নেই",repaid:"পরিশোধিত",mark_repaid:"পরিশোধ হয়েছে",
+ name:"নাম",email:"ইমেইল",role:"রোল",save:"সংরক্ষণ",cancel:"বাতিল",
+ select_member:"সদস্য নির্বাচন",month:"কোন মাসের জমা",date:"তারিখ",amount:"টাকার পরিমাণ (৳)",method:"পেমেন্ট মেথড",slip:"স্লিপ/স্ক্রিনশট",note:"নোট (ঐচ্ছিক)",
+ dep_title:"জমা যোগ করুন",dep_hint_admin:"এডমিন হিসেবে এন্ট্রি সরাসরি অনুমোদিত হবে",dep_hint_other:"এডমিন অনুমোদন না করা পর্যন্ত এটি হিসাবে যোগ হবে না",
+ submit:"জমা দিন",submitted_pending:"পাঠানো হয়েছে, এডমিনের অনুমোদনের অপেক্ষায়",added:"যোগ হয়েছে",
+ pending:"অপেক্ষমান",approved:"অনুমোদিত",rejected:"বাতিল",approve:"অনুমোদন",reject:"বাতিল",no_pending:"কোনো অপেক্ষমান অনুমোদন নেই",no_tx:"কোনো লেনদেন নেই",
+ bank_title:"ব্যাংকে জমা (ক্যাশিয়ার)",bank_name:"ব্যাংকের নাম",ref:"রেফারেন্স/ট্রানজেকশন নং",bank_hint:"জমা দিলে সবাইকে নোটিফিকেশন যাবে",no_bank:"ব্যাংকে কোনো জমা নেই",
+ only_cashier:"শুধু ক্যাশিয়ার/এডমিন ব্যাংক জমা যোগ করতে পারবেন",only_admin:"শুধু এডমিন করতে পারবেন",
+ loan_title:"ঋণ দিন",invest_t:"নতুন বিনিয়োগ",project:"প্রকল্পের নাম",
+ remind_title:"রিমাইন্ডার পাঠান",recipient:"প্রাপক",all:"সবাই",message:"বার্তা",send:"ইমেইল অ্যাপে খুলুন",
+ default_msg:"সম্মানিত সদস্য, সমিতির চলতি মাসের কিস্তি আগামী ১০ তারিখের মধ্যে জমা দেওয়ার অনুরোধ করা হলো।",
+ notif:"নোটিফিকেশন",no_notif:"কোনো নোটিফিকেশন নেই",
+ settings:"সেটিংস",backup:"ব্যাকআপ ডাউনলোড",restore:"ব্যাকআপ রিস্টোর",reset:"সব ডাটা মুছুন",confirm_reset:"সব ডাটা মুছে ফেলবেন? এটি ফেরানো যাবে না।",
+ statement:"স্টেটমেন্ট",delete:"মুছুন",confirm_del:"মুছে ফেলবেন?",no_member_first:"আগে সদস্য যোগ করুন",
+ n_bank:"ক্যাশিয়ার ব্যাংকে জমা দিয়েছেন:",n_dep_pending:"নতুন জমা অনুমোদনের অপেক্ষায়:",n_dep_ok:"জমা অনুমোদিত:",n_dep_no:"জমা বাতিল হয়েছে:",
+ view_slip:"স্লিপ দেখুন",by:"এন্ট্রি:",warn_neg:"সতর্কতা: ক্যাশের হিসাব ঋণাত্মক হচ্ছে",
+ settle:"চূড়ান্ত হিসাব",ret_capital:"মূলধন ফেরত",close_inv:"প্রকল্প বন্ধ",returned:"ফেরত:",remaining:"বাকি:",loss_l:"ক্ষতি:",closed_l:"বন্ধ",
+ n_profit:"বিনিয়োগ থেকে লাভ এসেছে:",n_ret:"বিনিয়োগের মূলধন ফেরত এসেছে:",confirm_close:"প্রকল্প বন্ধ করলে বাকি মূলধন ক্ষতি ধরা হবে। বন্ধ করবেন?",
+ s_title:"কে কত টাকা পাবে",s_dep:"জমা",s_share:"লাভের অংশ",s_loss:"ক্ষতির অংশ",s_due:"ঋণ কাটা",s_pay:"মোট প্রাপ্য",s_total:"সবার মোট প্রাপ্য",s_have:"এখন ক্যাশ + ব্যাংকে আছে",
+ s_note:"লাভ/ক্ষতি প্রত্যেকের মোট জমার অনুপাতে ভাগ হয়েছে (জমার সময় ধরা হয়নি)।",s_dl:"CSV ডাউনলোড",
+ s_w_inv:"বন্ধ না হওয়া বিনিয়োগে মূলধন আটকে আছে:",s_w_loan:"অপরিশোধিত ঋণ আছে:",s_w_pend:"অনুমোদনের অপেক্ষায় জমা আছে:",s_none:"হিসাব করার মতো জমা নেই",total_profit:"মোট লাভ",
+ profit_hist:"লাভের তালিকা"},
+en:{welcome:"Welcome,",admin:"Admin",cashier:"Cashier",member:"Member",total_pool:"Total Fund (deposits + profit)",cash_hand:"Cash with cashier",in_bank:"In bank",
+ a_deposit:"Deposit",a_bank:"Bank Dep.",a_loan:"Loan",a_invest:"Invest",a_remind:"Remind",
+ home:"Home",history:"History",approvals:"Approvals",bank:"Bank",
+ members:"Members",no_members:"No members yet. Add one using the button above.",add_member:"Add member",
+ saved:"Total saved:",loan_out:"Loan due:",left:"Inactive",
+ invest_title:"Investments & Profit",no_invest:"No investments",capital:"Capital:",profit:"Profit:",add_profit:"Add profit",
+ loans_title:"Loans",no_loans:"No loans",repaid:"Repaid",mark_repaid:"Mark repaid",
+ name:"Name",email:"Email",role:"Role",save:"Save",cancel:"Cancel",
+ select_member:"Select member",month:"For which month",date:"Date",amount:"Amount (৳)",method:"Payment method",slip:"Slip / screenshot",note:"Note (optional)",
+ dep_title:"Add deposit",dep_hint_admin:"As admin, entry is approved directly",dep_hint_other:"Will not count until admin approves",
+ submit:"Submit",submitted_pending:"Sent, waiting for admin approval",added:"Added",
+ pending:"Pending",approved:"Approved",rejected:"Rejected",approve:"Approve",reject:"Reject",no_pending:"Nothing pending",no_tx:"No transactions",
+ bank_title:"Bank deposit (cashier)",bank_name:"Bank name",ref:"Reference / transaction no.",bank_hint:"Everyone will be notified",no_bank:"No bank deposits",
+ only_cashier:"Only cashier/admin can add bank deposits",only_admin:"Admin only",
+ loan_title:"Give loan",invest_t:"New investment",project:"Project name",
+ remind_title:"Send reminder",recipient:"Recipient",all:"Everyone",message:"Message",send:"Open in email app",
+ default_msg:"Dear member, please pay this month's installment by the 10th.",
+ notif:"Notifications",no_notif:"No notifications",
+ settings:"Settings",backup:"Download backup",restore:"Restore backup",reset:"Erase all data",confirm_reset:"Erase all data? This cannot be undone.",
+ statement:"Statement",delete:"Delete",confirm_del:"Delete?",no_member_first:"Add a member first",
+ n_bank:"Cashier deposited to bank:",n_dep_pending:"New deposit awaiting approval:",n_dep_ok:"Deposit approved:",n_dep_no:"Deposit rejected:",
+ view_slip:"View slip",by:"Entered by:",warn_neg:"Warning: cash balance is negative",
+ settle:"Settlement",ret_capital:"Capital returned",close_inv:"Close project",returned:"Returned:",remaining:"Remaining:",loss_l:"Loss:",closed_l:"Closed",
+ n_profit:"Profit received from investment:",n_ret:"Investment capital returned:",confirm_close:"Closing will count the unreturned capital as a loss. Close?",
+ s_title:"Who gets how much",s_dep:"Deposit",s_share:"Profit share",s_loss:"Loss share",s_due:"Loan deducted",s_pay:"Total payable",s_total:"Total payable to all",s_have:"Cash + bank now",
+ s_note:"Profit/loss is split in proportion to each member's total deposit (timing not considered).",s_dl:"Download CSV",
+ s_w_inv:"Capital still stuck in open investments:",s_w_loan:"Unpaid loans:",s_w_pend:"Deposits awaiting approval:",s_none:"No deposits to settle",total_profit:"Total profit",
+ profit_hist:"Profit entries"}
+};
+
+/* ================= State ================= */
+const KEY='samity_v1';
+let lang='bn', role='admin', tab='home';
+let db = load() || {members:[],deposits:[],bank:[],loans:[],invests:[],notes:[]};
+let tmpImg=null;
+
+function load(){try{return JSON.parse(localStorage.getItem(KEY))}catch(e){return null}}
+function persist(){try{localStorage.setItem(KEY,JSON.stringify(db))}catch(e){alert('Storage full / সংরক্ষণ ব্যর্থ। ব্যাকআপ নিন ও পুরনো স্লিপ কমান।')}}
+const t=k=>T[lang][k]||k;
+const uid=()=>Date.now().toString(36)+Math.random().toString(36).slice(2,6);
+const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const loc=()=>lang==='bn'?'bn-BD':'en-IN';
+const money=n=>'৳'+Number(n||0).toLocaleString(loc(),{maximumFractionDigits:0});
+const today=()=>new Date().toISOString().slice(0,10);
+const thisMonth=()=>today().slice(0,7);
+const fmtDate=d=>d?new Date(d).toLocaleDateString(loc(),{day:'numeric',month:'short',year:'numeric'}):'';
+const fmtMonth=m=>m?new Date(m+'-01').toLocaleDateString(loc(),{month:'long',year:'numeric'}):'';
+const mName=id=>(db.members.find(m=>m.id===id)||{name:'?'}).name;
+const sum=a=>a.reduce((s,x)=>s+(+x.amount||0),0);
+
+function calc(){
+  const dep=sum(db.deposits.filter(d=>d.status==='approved'));
+  const bank=sum(db.bank);
+  const loanGiven=sum(db.loans), loanBack=sum(db.loans.filter(l=>l.repaid));
+  const inv=sum(db.invests);
+  const profit=db.invests.reduce((s,i)=>s+sum(i.profits||[]),0);
+  const ret=db.invests.reduce((s,i)=>s+(+i.returned||0),0);
+  const loss=db.invests.reduce((s,i)=>s+(i.closed?Math.max(0,i.amount-(+i.returned||0)):0),0);
+  return {dep,bank,profit,loss,fund:dep+profit-loss,cash:dep+profit+ret-bank-loanGiven+loanBack-inv};
+}
+function notify(text){db.notes.unshift({id:uid(),text,date:new Date().toISOString()});}
+function seenCount(){return +(localStorage.getItem('samity_seen')||0)}
+
+/* ================= Render ================= */
+function render(){
+  const c=calc();
+  const pend=db.deposits.filter(d=>d.status==='pending').length;
+  const unread=Math.max(0,db.notes.length-seenCount());
+  const isAdmin=role==='admin', canBank=role==='admin'||role==='cashier';
+  document.getElementById('app').innerHTML=`
+  <div class="bg-[#101b33] text-white p-5 pt-6 rounded-b-3xl shadow-md shrink-0">
+    <div class="flex items-center justify-center gap-2 mb-3">
+      ${db.logo?`<img src="${db.logo}" class="h-10 w-10 object-contain bg-white rounded-xl p-0.5">`:`<div class="h-10 w-10 rounded-xl bg-white/10 flex items-center justify-center"><i class="fa-solid fa-people-group"></i></div>`}
+      <div><p class="font-extrabold text-sm tracking-wide leading-tight">FRIENDS FOREVER</p><p class="text-[10px] text-amber-300 tracking-widest">FRIENDSHIP TOGETHER</p></div>
+    </div>
+    <div class="flex justify-between items-center mb-4">
+      <div class="flex gap-2">
+        <button onclick="toggleLang()" class="bg-slate-800/80 border border-slate-700 text-[11px] px-3 py-1.5 rounded-full"><i class="fa-solid fa-globe text-blue-400 mr-1"></i>${lang==='bn'?'English':'বাংলা'}</button>
+        <button onclick="openSettings()" class="w-8 h-8 rounded-full bg-slate-800/80 text-slate-300"><i class="fa-solid fa-gear text-xs"></i></button>
+      </div>
+      <div class="text-center">
+        <p class="text-[11px] text-slate-400">${t('welcome')}</p>
+        <select onchange="role=this.value;tab='home';render()" class="bg-transparent font-bold text-sm text-white outline-none text-center">
+          ${['admin','cashier','member'].map(r=>`<option class="text-black" value="${r}" ${role===r?'selected':''}>${t(r)}</option>`).join('')}
+        </select>
+      </div>
+      <button onclick="openNotes()" class="w-8 h-8 rounded-full bg-slate-800/80 text-slate-300 relative"><i class="fa-regular fa-bell text-xs"></i>${unread?`<span class="absolute -top-1 -right-1 min-w-4 h-4 px-1 bg-blue-500 rounded-full text-[9px] flex items-center justify-center">${unread}</span>`:''}</button>
+    </div>
+    <p class="text-xs text-slate-400">${t('total_pool')}</p>
+    <h1 class="text-3xl font-extrabold mb-3">${money(c.fund)}</h1>
+    <div class="grid grid-cols-2 gap-2 text-[11px]">
+      <div class="bg-slate-800/70 rounded-xl p-2.5"><p class="text-slate-400"><i class="fa-solid fa-wallet mr-1"></i>${t('cash_hand')}</p><p class="font-bold text-sm ${c.cash<0?'text-rose-400':''}">${money(c.cash)}</p></div>
+      <div class="bg-slate-800/70 rounded-xl p-2.5"><p class="text-slate-400"><i class="fa-solid fa-building-columns mr-1"></i>${t('in_bank')}</p><p class="font-bold text-sm">${money(c.bank)}</p></div>
+    </div>
+    ${c.cash<0?`<p class="text-[10px] text-rose-300 mt-1">${t('warn_neg')}</p>`:''}
+    <div class="grid grid-cols-5 gap-1.5 mt-4">
+      ${qa('blue','fa-plus',t('a_deposit'),"openDeposit()")}
+      ${qa('cyan','fa-building-columns',t('a_bank'),"openBank()")}
+      ${qa('purple','fa-hand-holding-dollar',t('a_loan'),"openLoan()")}
+      ${qa('emerald','fa-chart-line',t('a_invest'),"openInvest()")}
+      ${qa('amber','fa-envelope',t('a_remind'),"openRemind()")}
+    </div>
+  </div>
+  <div class="flex-1 overflow-y-auto hs p-4 pb-24">${body(c)}</div>
+  <div class="absolute bottom-3 left-0 right-0 flex justify-center px-4 pointer-events-none">
+    <div class="pointer-events-auto bg-[#0b1222] text-slate-400 px-3 py-2 rounded-full flex gap-1 shadow-2xl border border-slate-800 text-[10px]">
+      ${nav('home','fa-house',t('home'))}${nav('history','fa-list',t('history'))}${nav('approvals','fa-circle-check',t('approvals'),pend)}${nav('bank','fa-building-columns',t('bank'))}${nav('settle','fa-scale-balanced',t('settle'))}
+    </div>
+  </div>`;
+}
+function qa(col,ic,label,fn){return `<button onclick="${fn}" class="flex flex-col items-center"><div class="w-11 h-11 rounded-2xl bg-${col}-600 flex items-center justify-center text-white active:scale-95"><i class="fa-solid ${ic} text-sm"></i></div><span class="text-[10px] mt-1 text-slate-300 text-center leading-tight">${label}</span></button>`}
+function nav(id,ic,label,badge){return `<button onclick="tab='${id}';render()" class="relative px-2.5 py-1 rounded-full flex flex-col items-center ${tab===id?'text-white bg-slate-800':''}"><i class="fa-solid ${ic} text-sm"></i><span>${label}</span>${badge?`<span class="absolute top-0 right-1 bg-rose-500 text-white rounded-full text-[9px] px-1">${badge}</span>`:''}</button>`}
+
+function body(c){
+  if(tab==='history') return historyView();
+  if(tab==='approvals') return approvalsView();
+  if(tab==='bank') return bankView();
+  if(tab==='settle') return settleView();
+  return homeView();
+}
+function sec(title,right=''){return `<div class="flex justify-between items-center mb-2 mt-4 first:mt-0"><h3 class="font-bold text-slate-800 text-xs uppercase tracking-wider">${title}</h3>${right}</div>`}
+const empty=txt=>`<p class="text-center text-[11px] text-slate-400 py-4 border border-dashed border-slate-200 rounded-2xl">${txt}</p>`;
+
+function homeView(){
+  const isAdmin=role==='admin';
+  let h=sec(t('members'),isAdmin?`<button onclick="openMember()" class="text-[11px] text-blue-600 font-semibold"><i class="fa-solid fa-user-plus mr-1"></i>${t('add_member')}</button>`:`<span class="text-[10px] bg-slate-100 px-2 rounded-full">${db.members.length}</span>`);
+  h+= db.members.length? `<div class="space-y-2">${db.members.map(memberCard).join('')}</div>` : empty(t('no_members'));
+  h+=sec(t('invest_title'));
+  h+= db.invests.length? db.invests.map(investCard).join('') : empty(t('no_invest'));
+  h+=sec(t('loans_title'));
+  h+= db.loans.length? db.loans.map(l=>`<div class="bg-slate-50 border border-slate-100 rounded-2xl p-3 mb-2 text-[11px] flex justify-between items-center"><div><b class="text-xs">${esc(mName(l.memberId))}</b><p class="text-slate-400">${fmtDate(l.date)} ${l.note?'· '+esc(l.note):''}</p></div><div class="text-right"><b>${money(l.amount)}</b><br>${l.repaid?`<span class="text-emerald-600">${t('repaid')}</span>`:(role==='admin'?`<button onclick="repay('${l.id}')" class="text-blue-600 font-semibold">${t('mark_repaid')}</button>`:`<span class="text-rose-500">${t('loan_out')}</span>`)}</div></div>`).join('') : empty(t('no_loans'));
+  return h;
+}
+function memberCard(m){
+  const saved=sum(db.deposits.filter(d=>d.memberId===m.id&&d.status==='approved'));
+  const due=sum(db.loans.filter(l=>l.memberId===m.id&&!l.repaid));
+  const off=m.active===false;
+  return `<div class="p-3 rounded-2xl border flex items-center justify-between ${off?'bg-slate-100 border-dashed opacity-60':'bg-white border-slate-100 shadow-sm'}">
+    <div class="flex items-center gap-3 min-w-0"><div class="w-9 h-9 rounded-full bg-slate-100 flex items-center justify-center font-bold text-xs">${esc(m.name.charAt(0))}</div>
+    <div class="min-w-0"><h4 class="font-bold text-xs truncate">${esc(m.name)} ${off?`<span class="text-[9px] bg-red-100 text-red-600 px-1.5 rounded">${t('left')}</span>`:''}</h4>
+    <p class="text-[10px] text-slate-400 truncate">${esc(m.email||'')}</p>
+    <p class="text-[10px] text-slate-500">${t('saved')} <b>${money(saved)}</b></p>${due?`<p class="text-[10px] text-rose-500 font-semibold">${t('loan_out')} ${money(due)}</p>`:''}</div></div>
+    <div class="flex gap-1 shrink-0"><button onclick="statement('${m.id}')" title="${t('statement')}" class="bg-slate-100 text-slate-600 p-2 rounded-xl text-xs"><i class="fa-solid fa-download"></i></button>
+    ${role==='admin'?`<button onclick="toggleActive('${m.id}')" class="bg-slate-50 text-slate-400 p-2 rounded-xl text-xs"><i class="fa-solid fa-power-off"></i></button>`:''}</div></div>`;
+}
+function badge(s){const m={pending:'bg-amber-100 text-amber-700',approved:'bg-emerald-100 text-emerald-700',rejected:'bg-rose-100 text-rose-700'};return `<span class="text-[9px] px-1.5 py-0.5 rounded font-semibold ${m[s]}">${t(s)}</span>`}
+function txRow(d,actions){
+  return `<div class="bg-white border border-slate-100 rounded-2xl p-3 shadow-sm mb-2 text-[11px]">
+   <div class="flex justify-between"><b class="text-xs">${esc(mName(d.memberId))}</b><b class="text-sm">${money(d.amount)}</b></div>
+   <p class="text-slate-500">${fmtMonth(d.month)} · ${esc(d.method)} · ${fmtDate(d.date)}</p>
+   ${d.note?`<p class="text-slate-400">${esc(d.note)}</p>`:''}
+   <div class="flex justify-between items-center mt-1.5"><span>${badge(d.status)} <span class="text-slate-400">${t('by')} ${t(d.by)}</span></span>
+   <span class="flex gap-2">${d.slip?`<button onclick="showImg('${d.id}','deposits')" class="text-blue-600">${t('view_slip')}</button>`:''}${actions||''}</span></div></div>`;
+}
+function historyView(){
+  const l=[...db.deposits].sort((a,b)=>(b.date+b.id).localeCompare(a.date+a.id));
+  return sec(t('history'))+(l.length?l.map(d=>txRow(d,role==='admin'?`<button onclick="delDep('${d.id}')" class="text-rose-500">${t('delete')}</button>`:'')).join(''):empty(t('no_tx')));
+}
+function approvalsView(){
+  const l=db.deposits.filter(d=>d.status==='pending');
+  return sec(t('approvals'))+(l.length?l.map(d=>txRow(d,role==='admin'?`<button onclick="decide('${d.id}','approved')" class="bg-emerald-600 text-white px-2 py-1 rounded-lg">${t('approve')}</button><button onclick="decide('${d.id}','rejected')" class="bg-rose-100 text-rose-600 px-2 py-1 rounded-lg">${t('reject')}</button>`:'')).join(''):empty(t('no_pending')));
+}
+function bankView(){
+  const l=[...db.bank].sort((a,b)=>(b.date+b.id).localeCompare(a.date+a.id));
+  let h=sec(t('bank_title'),(role==='admin'||role==='cashier')?`<button onclick="openBank()" class="text-[11px] text-blue-600 font-semibold">+ ${t('a_bank')}</button>`:'');
+  h+= l.length? l.map(b=>`<div class="bg-white border border-slate-100 rounded-2xl p-3 shadow-sm mb-2 text-[11px]"><div class="flex justify-between"><b class="text-xs">${esc(b.bankName)}</b><b class="text-sm">${money(b.amount)}</b></div><p class="text-slate-500">${fmtDate(b.date)} ${b.ref?'· '+esc(b.ref):''}</p>${b.note?`<p class="text-slate-400">${esc(b.note)}</p>`:''}<div class="flex justify-between mt-1"><span class="text-slate-400">${t('by')} ${t(b.by)}</span><span class="flex gap-2">${b.slip?`<button onclick="showImg('${b.id}','bank')" class="text-blue-600">${t('view_slip')}</button>`:''}${role==='admin'?`<button onclick="delBank('${b.id}')" class="text-rose-500">${t('delete')}</button>`:''}</span></div></div>`).join('') : empty(t('no_bank'));
+  return h;
+}
+
+/* ================= Modal helpers ================= */
+function showModal(html){const m=document.getElementById('modal');document.getElementById('modalBody').innerHTML=`<button onclick="closeModal()" class="absolute top-4 right-4 text-slate-400"><i class="fa-solid fa-xmark text-lg"></i></button>`+html;m.classList.remove('hidden');m.classList.add('flex')}
+function closeModal(){const m=document.getElementById('modal');m.classList.add('hidden');m.classList.remove('flex');tmpImg=null}
+const inp='w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs mb-3 outline-none focus:ring-2 focus:ring-blue-500';
+const lbl=s=>`<label class="block text-xs font-bold text-slate-700 mb-1">${s}</label>`;
+const memberOpts=()=>db.members.filter(m=>m.active!==false).map(m=>`<option value="${m.id}">${esc(m.name)}</option>`).join('');
+const btn=(txt,col='blue')=>`<button type="submit" class="w-full bg-${col}-600 text-white font-bold py-3 rounded-xl text-xs">${txt}</button>`;
+function readImage(input){
+  const f=input.files[0]; if(!f){tmpImg=null;return}
+  const r=new FileReader();
+  r.onload=()=>{const im=new Image();im.onload=()=>{const s=Math.min(1,900/Math.max(im.width,im.height));const c=document.createElement('canvas');c.width=im.width*s;c.height=im.height*s;c.getContext('2d').drawImage(im,0,0,c.width,c.height);tmpImg=c.toDataURL('image/jpeg',0.7)};im.src=r.result};
+  r.readAsDataURL(f);
+}
+
+/* ================= Forms ================= */
+function openMember(){
+  if(role!=='admin')return alert(t('only_admin'));
+  showModal(`<h3 class="font-bold text-center mb-4">${t('add_member')}</h3><form onsubmit="saveMember(event)">
+  ${lbl(t('name'))}<input name="name" required class="${inp}">
+  ${lbl(t('email'))}<input name="email" type="email" class="${inp}">
+  ${btn(t('save'))}</form>`);
+}
+function saveMember(e){e.preventDefault();const f=e.target;db.members.push({id:uid(),name:f.name.value.trim(),email:f.email.value.trim(),active:true});persist();closeModal();render()}
+function toggleActive(id){const m=db.members.find(x=>x.id===id);m.active=m.active===false;persist();render()}
+
+function openDeposit(){
+  if(!db.members.length)return alert(t('no_member_first'));
+  showModal(`<h3 class="font-bold text-center">${t('dep_title')}</h3><p class="text-[11px] text-slate-400 text-center mb-4">${role==='admin'?t('dep_hint_admin'):t('dep_hint_other')}</p>
+  <form onsubmit="saveDeposit(event)">
+  ${lbl(t('select_member'))}<select name="member" class="${inp}">${memberOpts()}</select>
+  <div class="grid grid-cols-2 gap-2"><div>${lbl(t('month'))}<input name="month" type="month" value="${thisMonth()}" required class="${inp}"></div>
+  <div>${lbl(t('date'))}<input name="date" type="date" value="${today()}" required class="${inp}"></div></div>
+  ${lbl(t('amount'))}<input name="amount" type="number" min="1" required class="${inp}">
+  <div class="grid grid-cols-2 gap-2"><div>${lbl(t('method'))}<select name="method" class="${inp}"><option>bKash</option><option>Nagad</option><option>Bank</option><option>Cash</option></select></div>
+  <div>${lbl(t('slip'))}<input type="file" accept="image/*" onchange="readImage(this)" class="text-[10px] mb-3"></div></div>
+  ${lbl(t('note'))}<input name="note" class="${inp}">
+  ${btn(t('submit'))}</form>`);
+}
+function saveDeposit(e){
+  e.preventDefault();const f=e.target;
+  const d={id:uid(),memberId:f.member.value,amount:+f.amount.value,month:f.month.value,date:f.date.value,method:f.method.value,note:f.note.value,slip:tmpImg,by:role,status:role==='admin'?'approved':'pending'};
+  db.deposits.push(d);
+  if(d.status==='pending')notify(`${t('n_dep_pending')} ${mName(d.memberId)} ${money(d.amount)}`);
+  persist();closeModal();render();
+  if(d.status==='pending')alert(t('submitted_pending'));
+}
+function decide(id,s){
+  if(role!=='admin')return alert(t('only_admin'));
+  const d=db.deposits.find(x=>x.id===id);d.status=s;
+  notify(`${s==='approved'?t('n_dep_ok'):t('n_dep_no')} ${mName(d.memberId)} ${money(d.amount)} (${fmtMonth(d.month)})`);
+  persist();render();
+}
+function delDep(id){if(confirm(t('confirm_del'))){db.deposits=db.deposits.filter(x=>x.id!==id);persist();render()}}
+
+function openBank(){
+  if(role!=='admin'&&role!=='cashier')return alert(t('only_cashier'));
+  showModal(`<h3 class="font-bold text-center">${t('bank_title')}</h3><p class="text-[11px] text-slate-400 text-center mb-4">${t('bank_hint')}</p>
+  <form onsubmit="saveBank(event)">
+  ${lbl(t('bank_name'))}<input name="bank" required class="${inp}">
+  <div class="grid grid-cols-2 gap-2"><div>${lbl(t('amount'))}<input name="amount" type="number" min="1" required class="${inp}"></div>
+  <div>${lbl(t('date'))}<input name="date" type="date" value="${today()}" required class="${inp}"></div></div>
+  ${lbl(t('ref'))}<input name="ref" class="${inp}">
+  ${lbl(t('slip'))}<input type="file" accept="image/*" onchange="readImage(this)" class="text-[10px] mb-3">
+  ${lbl(t('note'))}<input name="note" class="${inp}">
+  ${btn(t('submit'),'cyan')}</form>`);
+}
+function saveBank(e){
+  e.preventDefault();const f=e.target;
+  const b={id:uid(),bankName:f.bank.value,amount:+f.amount.value,date:f.date.value,ref:f.ref.value,note:f.note.value,slip:tmpImg,by:role};
+  db.bank.push(b);notify(`${t('n_bank')} ${b.bankName} ${money(b.amount)}`);persist();closeModal();tab='bank';render();
+}
+function delBank(id){if(confirm(t('confirm_del'))){db.bank=db.bank.filter(x=>x.id!==id);persist();render()}}
+
+function openLoan(){
+  if(role!=='admin')return alert(t('only_admin'));
+  if(!db.members.length)return alert(t('no_member_first'));
+  showModal(`<h3 class="font-bold text-center mb-4">${t('loan_title')}</h3><form onsubmit="saveLoan(event)">
+  ${lbl(t('select_member'))}<select name="member" class="${inp}">${memberOpts()}</select>
+  <div class="grid grid-cols-2 gap-2"><div>${lbl(t('amount'))}<input name="amount" type="number" min="1" required class="${inp}"></div>
+  <div>${lbl(t('date'))}<input name="date" type="date" value="${today()}" required class="${inp}"></div></div>
+  ${lbl(t('note'))}<input name="note" class="${inp}">${btn(t('save'),'purple')}</form>`);
+}
+function saveLoan(e){e.preventDefault();const f=e.target;db.loans.push({id:uid(),memberId:f.member.value,amount:+f.amount.value,date:f.date.value,note:f.note.value,repaid:false});persist();closeModal();render()}
+function repay(id){db.loans.find(l=>l.id===id).repaid=true;persist();render()}
+
+function openInvest(){
+  if(role!=='admin')return alert(t('only_admin'));
+  showModal(`<h3 class="font-bold text-center mb-4">${t('invest_t')}</h3><form onsubmit="saveInvest(event)">
+  ${lbl(t('project'))}<input name="name" required class="${inp}">
+  <div class="grid grid-cols-2 gap-2"><div>${lbl(t('amount'))}<input name="amount" type="number" min="1" required class="${inp}"></div>
+  <div>${lbl(t('date'))}<input name="date" type="date" value="${today()}" required class="${inp}"></div></div>
+  ${btn(t('save'),'emerald')}</form>`);
+}
+function saveInvest(e){e.preventDefault();const f=e.target;db.invests.push({id:uid(),name:f.name.value,amount:+f.amount.value,date:f.date.value,profits:[],returned:0,closed:false});persist();closeModal();render()}
+function investCard(i){
+  const p=sum(i.profits||[]), rem=Math.max(0,i.amount-(+i.returned||0)), adm=role==='admin';
+  return `<div class="bg-slate-50 border border-slate-100 rounded-2xl p-3 mb-2 text-[11px]">
+   <div class="flex justify-between"><b class="text-xs">${esc(i.name)} ${i.closed?`<span class="text-[9px] bg-slate-200 px-1.5 rounded">${t('closed_l')}</span>`:''}</b><span class="text-slate-400">${fmtDate(i.date)}</span></div>
+   <div class="flex justify-between mt-1"><span>${t('capital')} <b>${money(i.amount)}</b></span><span>${t('profit')} <b class="text-emerald-600">${money(p)}</b></span></div>
+   <div class="flex justify-between"><span>${t('returned')} <b>${money(i.returned||0)}</b></span><span>${i.closed?`<b class="text-rose-500">${t('loss_l')} ${money(rem)}</b>`:`${t('remaining')} <b>${money(rem)}</b>`}</span></div>
+   ${(i.profits||[]).length?`<div class="mt-1.5 border-t border-slate-200 pt-1 text-slate-500">${i.profits.map(x=>`<div class="flex justify-between"><span>${fmtDate(x.date)} ${x.note?'· '+esc(x.note):''}</span><span class="text-emerald-600">+${money(x.amount)}</span></div>`).join('')}</div>`:''}
+   ${adm&&!i.closed?`<div class="flex gap-3 mt-2 font-semibold text-blue-600"><button onclick="openInvAmt('${i.id}','profit')">+ ${t('add_profit')}</button><button onclick="openInvAmt('${i.id}','return')">+ ${t('ret_capital')}</button><button onclick="closeInv('${i.id}')" class="text-rose-500">${t('close_inv')}</button></div>`:''}
+  </div>`;
+}
+function openInvAmt(id,kind){
+  if(role!=='admin')return alert(t('only_admin'));
+  const i=db.invests.find(x=>x.id===id);
+  showModal(`<h3 class="font-bold text-center mb-4">${esc(i.name)} — ${kind==='profit'?t('add_profit'):t('ret_capital')}</h3><form onsubmit="saveInvAmt(event,'${id}','${kind}')">
+  <div class="grid grid-cols-2 gap-2"><div>${lbl(t('amount'))}<input name="amount" type="number" min="1" required class="${inp}"></div>
+  <div>${lbl(t('date'))}<input name="date" type="date" value="${today()}" required class="${inp}"></div></div>
+  ${lbl(t('note'))}<input name="note" class="${inp}">${btn(t('save'),'emerald')}</form>`);
+}
+function saveInvAmt(e,id,kind){
+  e.preventDefault();const f=e.target;const i=db.invests.find(x=>x.id===id);const a=+f.amount.value;
+  if(kind==='profit'){i.profits=i.profits||[];i.profits.push({id:uid(),amount:a,date:f.date.value,note:f.note.value});notify(`${t('n_profit')} ${i.name} ${money(a)}`)}
+  else{i.returned=(+i.returned||0)+a;notify(`${t('n_ret')} ${i.name} ${money(a)}`)}
+  persist();closeModal();render();
+}
+function closeInv(id){if(confirm(t('confirm_close'))){db.invests.find(x=>x.id===id).closed=true;persist();render()}}
+
+function settleData(){
+  const c=calc();
+  const rows=db.members.map(m=>({m,dep:sum(db.deposits.filter(d=>d.memberId===m.id&&d.status==='approved')),due:sum(db.loans.filter(l=>l.memberId===m.id&&!l.repaid))})).filter(r=>r.dep>0||r.due>0);
+  rows.forEach(r=>{r.ratio=c.dep?r.dep/c.dep:0;r.profit=c.profit*r.ratio;r.loss=c.loss*r.ratio;r.pay=r.dep+r.profit-r.loss-r.due});
+  return {c,rows};
+}
+function settleView(){
+  const {c,rows}=settleData();
+  const open=db.invests.filter(i=>!i.closed).reduce((s,i)=>s+Math.max(0,i.amount-(+i.returned||0)),0);
+  const due=sum(db.loans.filter(l=>!l.repaid));
+  const pend=db.deposits.filter(d=>d.status==='pending').length;
+  let h=sec(t('s_title'),rows.length?`<button onclick="dlSettle()" class="text-[11px] text-blue-600 font-semibold"><i class="fa-solid fa-download mr-1"></i>${t('s_dl')}</button>`:'');
+  const w=[];
+  if(open>0)w.push(`${t('s_w_inv')} ${money(open)}`);
+  if(due>0)w.push(`${t('s_w_loan')} ${money(due)}`);
+  if(pend>0)w.push(`${t('s_w_pend')} ${pend}`);
+  if(w.length)h+=`<div class="bg-amber-50 border border-amber-200 rounded-2xl p-3 text-[11px] text-amber-800 mb-3 space-y-0.5">${w.map(x=>`<p><i class="fa-solid fa-triangle-exclamation mr-1"></i>${x}</p>`).join('')}</div>`;
+  if(!rows.length)return h+empty(t('s_none'));
+  h+=rows.map(r=>`<div class="bg-white border border-slate-100 rounded-2xl p-3 shadow-sm mb-2 text-[11px]">
+    <div class="flex justify-between items-center"><b class="text-xs">${esc(r.m.name)} <span class="text-slate-400 font-normal">(${(r.ratio*100).toLocaleString(loc(),{maximumFractionDigits:1})}%)</span></b><b class="text-sm text-emerald-700">${money(r.pay)}</b></div>
+    <div class="grid grid-cols-2 gap-x-3 mt-1 text-slate-500"><span>${t('s_dep')}: <b class="text-slate-700">${money(r.dep)}</b></span><span>${t('s_share')}: <b class="text-emerald-600">+${money(r.profit)}</b></span>
+    ${c.loss?`<span>${t('s_loss')}: <b class="text-rose-500">-${money(r.loss)}</b></span>`:''}${r.due?`<span>${t('s_due')}: <b class="text-rose-500">-${money(r.due)}</b></span>`:''}</div></div>`).join('');
+  const tot=rows.reduce((s,r)=>s+r.pay,0);
+  h+=`<div class="bg-[#101b33] text-white rounded-2xl p-3 text-[11px]"><div class="flex justify-between"><span>${t('total_profit')}</span><b>${money(c.profit)}</b></div>
+   <div class="flex justify-between"><span>${t('s_total')}</span><b>${money(tot)}</b></div><div class="flex justify-between"><span>${t('s_have')}</span><b>${money(c.cash+c.bank)}</b></div></div>
+   <p class="text-[10px] text-slate-400 mt-2">${t('s_note')}</p>`;
+  return h;
+}
+function dlSettle(){
+  const {rows}=settleData();
+  const csv='\ufeffName,Deposit,Profit share,Loss share,Loan deducted,Payable\n'+rows.map(r=>['"'+r.m.name.replace(/"/g,'""')+'"',r.dep,Math.round(r.profit),Math.round(r.loss),r.due,Math.round(r.pay)].join(',')).join('\n');
+  const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv'}));a.download='settlement-'+today()+'.csv';a.click();
+}
+function migrate(){
+  db.invests=db.invests||[];
+  db.invests.forEach(i=>{if(!i.profits){i.profits=(+i.profit>0)?[{id:uid(),amount:+i.profit,date:i.date,note:''}]:[];delete i.profit}i.returned=+i.returned||0;i.closed=!!i.closed});
+}
+
+function openRemind(){
+  if(role!=='admin')return alert(t('only_admin'));
+  showModal(`<h3 class="font-bold text-center mb-4">${t('remind_title')}</h3><form onsubmit="sendRemind(event)">
+  ${lbl(t('recipient'))}<select name="to" class="${inp}"><option value="all">${t('all')}</option>${db.members.filter(m=>m.email).map(m=>`<option value="${esc(m.email)}">${esc(m.name)}</option>`).join('')}</select>
+  ${lbl(t('message'))}<textarea name="msg" rows="4" class="${inp}">${t('default_msg')}</textarea>${btn(t('send'),'amber')}</form>`);
+}
+function sendRemind(e){
+  e.preventDefault();const f=e.target;
+  const list=f.to.value==='all'?db.members.filter(m=>m.email&&m.active!==false).map(m=>m.email).join(','):f.to.value;
+  if(!list)return alert(t('no_members'));
+  location.href=`mailto:?bcc=${encodeURIComponent(list)}&subject=${encodeURIComponent('Friends Forever')}&body=${encodeURIComponent(f.msg.value)}`;
+  closeModal();
+}
+
+function openNotes(){
+  localStorage.setItem('samity_seen',db.notes.length);
+  showModal(`<h3 class="font-bold text-center mb-4">${t('notif')}</h3>`+(db.notes.length?db.notes.slice(0,50).map(n=>`<div class="border-b border-slate-100 py-2 text-xs">${esc(n.text)}<p class="text-[10px] text-slate-400">${fmtDate(n.date)}</p></div>`).join(''):empty(t('no_notif'))));
+  render();
+}
+function showImg(id,col){const x=db[col].find(i=>i.id===id);showModal(`<img src="${x.slip}" class="w-full rounded-xl mt-6">`)}
+
+function openSettings(){
+  showModal(`<h3 class="font-bold text-center mb-4">${t('settings')}</h3>
+  ${role==='admin'?`<label class="block w-full border border-slate-200 rounded-xl py-3 text-xs font-bold mb-2 text-center cursor-pointer"><i class="fa-solid fa-image mr-1"></i>${lang==='bn'?'লোগো আপলোড':'Upload logo'}<input type="file" accept="image/*" class="hidden" onchange="setLogo(this)"></label>`:''}
+  <button onclick="backup()" class="w-full border border-slate-200 rounded-xl py-3 text-xs font-bold mb-2"><i class="fa-solid fa-download mr-1"></i>${t('backup')}</button>
+  <label class="block w-full border border-slate-200 rounded-xl py-3 text-xs font-bold mb-2 text-center cursor-pointer"><i class="fa-solid fa-upload mr-1"></i>${t('restore')}<input type="file" accept=".json" class="hidden" onchange="restore(this)"></label>
+  ${role==='admin'?`<button onclick="resetAll()" class="w-full bg-rose-50 text-rose-600 rounded-xl py-3 text-xs font-bold"><i class="fa-solid fa-trash mr-1"></i>${t('reset')}</button>`:''}`);
+}
+function setLogo(i){const f=i.files[0];if(!f)return;const r=new FileReader();r.onload=()=>{const im=new Image();im.onload=()=>{const s=Math.min(1,300/Math.max(im.width,im.height));const c=document.createElement('canvas');c.width=im.width*s;c.height=im.height*s;c.getContext('2d').drawImage(im,0,0,c.width,c.height);db.logo=c.toDataURL('image/png');persist();closeModal();render()};im.src=r.result};r.readAsDataURL(f)}
+function backup(){const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([JSON.stringify(db)],{type:'application/json'}));a.download='samity-backup-'+today()+'.json';a.click()}
+function restore(i){const f=i.files[0];if(!f)return;const r=new FileReader();r.onload=()=>{try{db=JSON.parse(r.result);migrate();persist();closeModal();render()}catch(e){alert('Invalid file')}};r.readAsText(f)}
+function resetAll(){if(confirm(t('confirm_reset'))){db={members:[],deposits:[],bank:[],loans:[],invests:[],notes:[]};persist();closeModal();render()}}
+
+function statement(id){
+  const m=db.members.find(x=>x.id===id);
+  const rows=db.deposits.filter(d=>d.memberId===id).sort((a,b)=>a.date.localeCompare(b.date));
+  let csv='\ufeffMonth,Date,Amount,Method,Status,Note\n'+rows.map(d=>[d.month,d.date,d.amount,d.method,d.status,'"'+(d.note||'').replace(/"/g,'""')+'"'].join(',')).join('\n');
+  const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv'}));a.download=`statement-${m.name}.csv`;a.click();
+}
+function toggleLang(){lang=lang==='bn'?'en':'bn';document.documentElement.lang=lang;render()}
+
+migrate();
+render();
+</script>
+</body>
+</html>
